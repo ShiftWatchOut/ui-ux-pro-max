@@ -55,6 +55,9 @@ jobs:
           git diff --stat
 
       - name: 提交并推送
+        # 注意：用 GITHUB_TOKEN 推送产生的 push 事件不会触发其他 workflow（GitHub 防递归），
+        # 所以这次提交不会让「校验镜像」再跑一遍。安全性由上面的「重建并校验镜像」保证：
+        # 校验不过就走不到这一步，也不会提交。
         run: |
           set -euo pipefail
           if [[ -z "$(git status --porcelain)" ]]; then
