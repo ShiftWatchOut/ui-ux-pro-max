@@ -1,20 +1,22 @@
-name: Sync upstream mirror
+name: 同步上游镜像
 
-# Keeps skills/ in lockstep with nextlevelbuilder/ui-ux-pro-max-skill.
-# CC Switch detects updates by comparing SHA-256 content hashes of an installed
-# skill against the repository, so any commit pushed here shows up as
-# "有新版本 / update available" in its Skills panel.
+# 让 skills/ 持续跟随上游 nextlevelbuilder/ui-ux-pro-max-skill 的正式发版。
+# CC Switch 用 SHA-256 内容哈希比对本地已安装技能与远端仓库，所以只要这里产生
+# 新提交，它的技能卡片就会出现「有新版本」，点更新即可。
+#
+# 默认跟「最新 release tag」而不是 main：上游用 semantic-release，main 上长期存在
+# 已合并但未发版的提交。想临时跟分支或固定某个 tag，手动触发并填写 ref 即可。
 
 on:
   schedule:
-    # 20:00 UTC = 04:00 Asia/Shanghai
-    - cron: "0 20 * * *"
+    # 每周一次：周日 20:00 UTC = 周一 04:00 Asia/Shanghai
+    - cron: "0 20 * * 0"
   workflow_dispatch:
     inputs:
       ref:
-        description: "Upstream ref to mirror (branch or tag)"
+        description: "上游 ref（分支或 tag）；留空 = 自动取最新 release tag"
         required: false
-        default: "main"
+        default: ""
 
 permissions:
   contents: write
@@ -25,40 +27,45 @@ concurrency:
 
 jobs:
   sync:
-    name: Rebuild skills/ from upstream
+    name: 从上游重建 skills/
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
-      - name: Rebuild and verify mirror
+      # 构建 + 校验（frontmatter、路径契约、无插件根残留、search.py 冒烟测试）。
+      # 校验失败会以非 0 退出，后面的步骤不会执行，也不会提交坏镜像。
+      - name: 重建并校验镜像
         env:
-          UPSTREAM_REF: ${{ inputs.ref || 'main' }}
-        run: bash scripts/sync-upstream.sh --ref "$UPSTREAM_REF"
+          UPSTREAM_REF: ${{ inputs.ref || '' }}
+        run: |
+          if [[ -n "${UPSTREAM_REF}" ]]; then
+            bash scripts/sync-upstream.sh --ref "$UPSTREAM_REF"
+          else
+            bash scripts/sync-upstream.sh
+          fi
 
-      - name: Show changes
+      - name: 查看变更
         run: |
           git status --porcelain
           git diff --stat
 
-      - name: Commit and push
+      - name: 提交并推送
         run: |
           set -euo pipefail
           if [[ -z "$(git status --porcelain)" ]]; then
-            echo "Mirror already up to date — nothing to commit."
+            echo "镜像已是最新，无需提交。"
             exit 0
           fi
+          # 提交信息带上游版本与短 sha，方便回溯镜像对应哪个发版
           summary="$(python3 - <<'PY'
           import json
-          data = json.load(open("upstream.lock.json", encoding="utf-8"))
-          up = data["upstream"]
-          print(f"{up['ref']} @ {up['commit'][:7]} (v{up['version']})")
+          upstream = json.load(open("upstream.lock.json", encoding="utf-8"))["upstream"]
+          print(f"{upstream['version']} ({upstream['commit'][:7]})")
           PY
           )"
           git config user.name "github-actions[bot]"

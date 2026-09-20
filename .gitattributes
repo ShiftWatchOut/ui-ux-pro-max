@@ -1,6 +1,6 @@
-# Mirrors must stay byte-identical to upstream: any checkout-time line-ending
-# conversion changes data/*.csv bytes and therefore the sha256 snapshots recorded
-# in data/catalog-summary.json (checked by skills/ui-ux-pro-max/scripts/validate_data.py).
+# 镜像必须与上游保持字节一致：任何 checkout 时的换行转换都会改变 data/*.csv 的
+# 字节，从而让 data/catalog-summary.json 里记录的 sha256 快照对不上
+# （skills/ui-ux-pro-max/scripts/validate_data.py 会校验这些快照）。
 * -text
 
 *.ttf binary
