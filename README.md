@@ -155,6 +155,21 @@ python3 scripts/build_mirror.py verify     # 离线校验当前 skills/（含 se
    基准目录就是 `SKILL.md` 所在目录。上游 main 在 #474 之后把这条写成了规则：
    `.github/workflows/check-asset-sync.yml` 明确要求 skill-relative paths（"resolve in every install
    context: plugin cache, project-level CLI install, CLI --global install, manual copy"），并有单测逐条断言。
+
+   为什么非得改，实测对照（本机 `CLAUDE_PLUGIN_ROOT` 未定义）：
+
+   ```console
+   $ python3 "${CLAUDE_PLUGIN_ROOT}/.claude/skills/ui-ux-pro-max/scripts/search.py" "keyboard focus modal" --domain ux
+   python3: can't open file '/.claude/skills/ui-ux-pro-max/scripts/search.py': [Errno 2] No such file or directory
+
+   $ python3 ~/.claude/skills/ui-ux-pro-max/scripts/search.py "keyboard focus modal" --domain ux
+   - **Severity:** High            # 能用，但是巧合：见下
+   ```
+
+   `~/.claude/skills/...` 这类 home 根路径之所以有时能用，是因为 CC Switch 默认用**软链接模式**分发：
+   `~/.claude/skills/design -> ~/.agents/skills/design`。一旦把同步方式改成「复制」、关掉 Claude Code
+   目标，或者把技能同步给 Codex/Gemini/OpenCode/Hermes，这个目录就不存在了。而 skill 内相对路径是
+   pi / Claude Code / agentskills.io 标准里 agent 拿到技能 `<location>` 后应有的写法，到处都成立。
 3. **1 处定点代码补丁**：`brand/scripts/sync-brand-to-tokens.cjs` 旧版用 `process.cwd()` 解析兄弟技能的
    脚本路径（装到 skills 目录后必然找不到），镜像按上游 main 的修法改成基于 `__dirname` 解析。
    补丁会自动退休：上游修好后自动跳过。规则与原因见 [`patches/README.md`](patches/README.md)。
@@ -165,8 +180,8 @@ python3 scripts/build_mirror.py verify     # 离线校验当前 skills/（含 se
 ## 已知限制
 
 - **外部技能引用**：v2.15.0 的 `banner-design` 文档引用了 `ai-artist`、`ai-multimodal`、`chrome-devtools`
-  三个不属于上游仓库的技能。镜像会把这些名字记在 [`upstream.lock.json`](upstream.lock.json) 的
-  `externalSkillRefs` 里；用到对应功能时需要自己另外装那些技能。
+  三个不属于上游仓库的技能（上游自己也没带）。镜像会把这些名字记在 [`upstream.lock.json`](upstream.lock.json) 的
+  `externalSkillRefs` 里；用到对应功能时需要自己另外装那些技能。其余 6 个技能不依赖外部技能。
 - 还有两处**打印给用户看的提示字符串**仍写着旧路径（`design/scripts/cip/generate.py`、
   `brand/scripts/extract-colors.cjs`）。它们不影响行为，上游 main 已修，下个 tag 同步后会自动消失。
 - 文档中的脚本调用以「`SKILL.md` 所在目录」为基准（上游约定）。若你的客户端不告知技能目录，直接用绝对路径运行即可，例如
