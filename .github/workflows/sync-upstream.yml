@@ -1,0 +1,68 @@
+name: Sync upstream mirror
+
+# Keeps skills/ in lockstep with nextlevelbuilder/ui-ux-pro-max-skill.
+# CC Switch detects updates by comparing SHA-256 content hashes of an installed
+# skill against the repository, so any commit pushed here shows up as
+# "有新版本 / update available" in its Skills panel.
+
+on:
+  schedule:
+    # 20:00 UTC = 04:00 Asia/Shanghai
+    - cron: "0 20 * * *"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Upstream ref to mirror (branch or tag)"
+        required: false
+        default: "main"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Rebuild skills/ from upstream
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Rebuild and verify mirror
+        env:
+          UPSTREAM_REF: ${{ inputs.ref || 'main' }}
+        run: bash scripts/sync-upstream.sh --ref "$UPSTREAM_REF"
+
+      - name: Show changes
+        run: |
+          git status --porcelain
+          git diff --stat
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "Mirror already up to date — nothing to commit."
+            exit 0
+          fi
+          summary="$(python3 - <<'PY'
+          import json
+          data = json.load(open("upstream.lock.json", encoding="utf-8"))
+          up = data["upstream"]
+          print(f"{up['ref']} @ {up['commit'][:7]} (v{up['version']})")
+          PY
+          )"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- skills upstream.lock.json
+          git commit -m "chore(sync): mirror upstream ${summary}"
+          git push

@@ -1,0 +1,16 @@
+# Mirrors must stay byte-identical to upstream: any checkout-time line-ending
+# conversion changes data/*.csv bytes and therefore the sha256 snapshots recorded
+# in data/catalog-summary.json (checked by skills/ui-ux-pro-max/scripts/validate_data.py).
+* -text
+
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.pdf binary
+*.ico binary

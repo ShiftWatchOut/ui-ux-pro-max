@@ -1,0 +1,48 @@
+{
+  "generatedBy": "scripts/build_mirror.py",
+  "skills": {
+    "banner-design": {
+      "files": 2,
+      "path": "skills/banner-design",
+      "sha256": "89c7c10492eedb87655cf521bc0170e95e2975ef24d0a7f69196551952542e72"
+    },
+    "brand": {
+      "files": 17,
+      "path": "skills/brand",
+      "sha256": "7abfa436b2c3b3cb74f29b755633587e9d2c5901ce8cab6cbbd96f7e832f1195"
+    },
+    "design": {
+      "files": 35,
+      "path": "skills/design",
+      "sha256": "2de572e3ee807667b2d47d3849486f1645a73797929af193545f0a0c23851ef4"
+    },
+    "design-system": {
+      "files": 26,
+      "path": "skills/design-system",
+      "sha256": "9b851f4eacaea8291a7e9d58773abe30bca26eb0aaa6d1fdb3daf7bf1722ddcd"
+    },
+    "slides": {
+      "files": 6,
+      "path": "skills/slides",
+      "sha256": "ef4b0c1ad100dd5cda1135a6be13a32e0806b38ea90e6c0ff6324d035d154bbb"
+    },
+    "ui-styling": {
+      "files": 93,
+      "path": "skills/ui-styling",
+      "sha256": "32fb72698ec8c28741bbdc47bcb5a244ba20c44b9a7594cd2ebc9e5e2fce3f84"
+    },
+    "ui-ux-pro-max": {
+      "files": 47,
+      "path": "skills/ui-ux-pro-max",
+      "sha256": "e99cc2f4f1a89473341fc1315da9924050d0e835c90daa752a7b748ba288ee05"
+    }
+  },
+  "upstream": {
+    "commit": "de5f12b400775997d213524ef02a7c7d2746806f",
+    "license": "MIT",
+    "ref": "main",
+    "repository": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+    "skillsSubdir": ".claude/skills",
+    "version": "2.13.0"
+  }
+}
